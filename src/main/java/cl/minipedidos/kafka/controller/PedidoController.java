@@ -2,6 +2,8 @@
 package cl.minipedidos.kafka.controller;
 
 import cl.minipedidos.kafka.model.Pedido;
+import cl.minipedidos.kafka.producer.PedidoProducer;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +18,13 @@ public class PedidoController {
     private final List<Pedido> pedidos = new ArrayList<>();
     private final AtomicLong secuencia = new AtomicLong(1000);
 
+    // Servicio encargado de enviar mensajes a Kafka
+    private final PedidoProducer pedidoProducer;
+
+    public PedidoController(PedidoProducer pedidoProducer) {
+        this.pedidoProducer = pedidoProducer;
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public synchronized Pedido crearPedido(@RequestBody Pedido pedido) {
@@ -24,6 +33,11 @@ public class PedidoController {
         pedido.setEstado("PENDIENTE");
 
         pedidos.add(pedido);
+
+        // Publicar evento en el tópico pedidos-creados
+        pedidoProducer.enviarPedido(
+            "Pedido creado - ID: " + pedido.getId()
+        );
 
         return pedido;
     }
