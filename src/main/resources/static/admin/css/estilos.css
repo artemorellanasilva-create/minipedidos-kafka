@@ -1,0 +1,200 @@
+
+/* =========================================
+   MiniPedidos V2 - Sesion 3
+   Panel de administracion de Kafka
+   ========================================= */
+
+:root {
+    --azul: #183b63;
+    --azul-claro: #eaf2fa;
+    --fondo: #f5f7fb;
+    --blanco: #ffffff;
+    --texto: #253247;
+    --borde: #d8e1eb;
+    --verde: #18794e;
+    --rojo: #b42318;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: var(--fondo);
+    color: var(--texto);
+    line-height: 1.5;
+}
+
+/* Encabezado */
+
+.encabezado {
+    background-color: var(--blanco);
+    border-bottom: 3px solid var(--azul);
+    padding: 24px 6%;
+}
+
+.encabezado h1 {
+    margin: 0;
+    color: var(--azul);
+    font-size: 28px;
+}
+
+.encabezado p {
+    margin: 5px 0 0;
+    color: #52657d;
+}
+
+/* Distribucion */
+
+.contenedor {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 1200px;
+    margin: 35px auto;
+    padding: 0 20px;
+}
+
+.tarjeta {
+    background: var(--blanco);
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    padding: 28px;
+    box-shadow: 0 3px 12px rgba(20, 43, 70, 0.05);
+}
+
+.tarjeta h2 {
+    color: var(--azul);
+    margin-top: 0;
+    font-size: 21px;
+}
+
+/* Formulario */
+
+form {
+    margin-top: 24px;
+}
+
+label {
+    display: block;
+    margin: 16px 0 6px;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #b8c7d7;
+    border-radius: 6px;
+    background: var(--blanco);
+    color: var(--texto);
+    font-size: 15px;
+}
+
+input:focus,
+select:focus {
+    outline: 2px solid #9ac4ec;
+    outline-offset: 1px;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+/* Boton */
+
+button {
+    background-color: var(--azul);
+    color: var(--blanco);
+    padding: 12px 20px;
+    margin-top: 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+button:disabled {
+    background-color: #aab7c6;
+    cursor: not-allowed;
+}
+
+button:not(:disabled):hover {
+    background-color: #285782;
+}
+
+/* Resultados */
+
+#estado-operacion {
+    padding: 12px;
+    background: var(--azul-claro);
+    border-radius: 6px;
+    margin: 18px 0;
+}
+
+.tabla-contenedor {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th,
+td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--borde);
+}
+
+th {
+    background: var(--azul-claro);
+    color: var(--azul);
+}
+
+#detalle-resultados {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 13px;
+    margin-top: 16px;
+}
+
+.mensaje-exito {
+    color: var(--verde);
+}
+
+.mensaje-error {
+    color: var(--rojo);
+}
+
+/* Pie de pagina */
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #64748b;
+    font-size: 13px;
+}
+
+/* Adaptacion a pantallas pequenas */
+
+@media (max-width: 850px) {
+    .contenedor {
+        grid-template-columns: 1fr;
+    }
+
+    .encabezado {
+        padding: 20px;
+    }
+
+    .tarjeta {
+        padding: 20px;
+    }
+}

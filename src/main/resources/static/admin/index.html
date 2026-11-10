@@ -1,0 +1,171 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>MiniPedidos V2 | Administración Kafka</title>
+
+    <link rel="stylesheet" href="css/estilos.css">
+    <script src="js/admin-kafka.js" defer></script>
+</head>
+
+<body>
+
+<header class="encabezado">
+    <h1>MiniPedidos V2</h1>
+    <p>Panel de Administración de Apache Kafka</p>
+</header>
+
+<main class="contenedor">
+
+    <section class="tarjeta">
+        <h2>Administración de tópicos</h2>
+
+        <p>
+            Consulta los tópicos, particiones,
+            réplicas y configuraciones de Kafka.
+        </p>
+
+        <form id="form-administracion">
+
+            <label for="operacion">
+                Selecciona una operación
+            </label>
+
+            <select id="operacion" name="operacion">
+                <option value="listar">
+                    Listar tópicos
+                </option>
+
+                <option value="consultar">
+                    Consultar particiones y réplicas
+                </option>
+
+                <option value="crear">
+                    Crear tópico
+                </option>
+
+                <option value="configuracion">
+                    Consultar configuraciones
+                </option>
+
+                <option value="retencion">
+                    Modificar retención
+                </option>
+            </select>
+
+            <div id="grupo-topico">
+                <label for="topico">
+                    Nombre del tópico
+                </label>
+
+                <input
+                    type="text"
+                    id="topico"
+                    name="topico"
+                    placeholder="Ej: pedidos-creados"
+                    maxlength="249"
+                >
+            </div>
+
+            <div id="grupo-particiones" hidden>
+                <label for="particiones">
+                    Número de particiones
+                </label>
+
+                <input
+                    type="number"
+                    id="particiones"
+                    name="particiones"
+                    min="1"
+                    value="3"
+                >
+            </div>
+
+            <div id="grupo-replicas" hidden>
+                <label for="replicas">
+                    Factor de replicación
+                </label>
+
+                <input
+                    type="number"
+                    id="replicas"
+                    name="replicas"
+                    min="1"
+                    value="1"
+                >
+            </div>
+
+            <div id="grupo-retencion" hidden>
+                <label for="retencion">
+                    Retención en días
+                </label>
+
+                <input
+                    type="number"
+                    id="retencion"
+                    name="retencion"
+                    min="1"
+                    value="7"
+                >
+            </div>
+
+            <button
+                type="submit"
+                id="btn-ejecutar"
+                disabled
+            >
+                Ejecutar operación
+            </button>
+
+        </form>
+    </section>
+
+    <section class="tarjeta">
+
+        <h2>Resultados de la operación</h2>
+
+        <div
+            id="estado-operacion"
+            role="status"
+            aria-live="polite"
+        >
+            Interfaz en preparación.
+        </div>
+
+        <div class="tabla-contenedor">
+            <table id="tabla-resultados">
+
+                <thead>
+                    <tr>
+                        <th>Tópico</th>
+                        <th>Particiones</th>
+                        <th>Réplicas</th>
+                    </tr>
+                </thead>
+
+                <tbody id="cuerpo-resultados">
+                </tbody>
+
+            </table>
+        </div>
+
+        <pre id="detalle-resultados"></pre>
+
+    </section>
+
+</main>
+
+<footer>
+    <p>
+        Cloud Native I |
+        MiniPedidos V2 |
+        Apache Kafka
+    </p>
+</footer>
+
+</body>
+</html>
