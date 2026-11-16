@@ -4,6 +4,7 @@ package cl.minipedidos.kafka.admin;
 // Apache Kafka - Administracion
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
@@ -30,6 +31,8 @@ import java.util.concurrent.TimeUnit;
 public class KafkaAdminService {
 
     private final Properties propiedades = new Properties();
+
+    private static final String RETENCION_INICIAL = "604800000";
 
     // =========================================
     // 1. CONFIGURACION DEL CLIENTE KAFKA
@@ -154,21 +157,17 @@ public class KafkaAdminService {
 
         try (AdminClient admin = AdminClient.create(propiedades)) {
 
-            // Identificar el recurso Kafka
             ConfigResource recurso = new ConfigResource(
                     ConfigResource.Type.TOPIC,
                     nombre
             );
 
-            // Solicitar configuraciones al broker
             Config configuracion = admin.describeConfigs(
                     List.of(recurso)
             ).all().get(10, TimeUnit.SECONDS).get(recurso);
 
-            // Ordenar los resultados alfabeticamente
             Map<String, String> resultado = new TreeMap<>();
 
-            // Seleccionar las propiedades relevantes
             for (ConfigEntry entrada : configuracion.entries()) {
 
                 String clave = entrada.name();
@@ -185,6 +184,91 @@ public class KafkaAdminService {
                     );
                 }
             }
+
+            return resultado;
+        }
+    }
+
+    // =========================================
+    // 5. CREAR UN NUEVO TOPICO EN KAFKA
+    // =========================================
+
+    public Map<String, Object> crearTopico(
+            String nombre,
+            int cantidadParticiones,
+            short factorReplicacion) throws Exception {
+
+        // Validar nombre
+        if (nombre == null
+                || !nombre.matches("[a-zA-Z0-9._-]{1,249}")
+                || nombre.equals(".")
+                || nombre.equals("..")) {
+
+            throw new IllegalArgumentException(
+                    "El nombre del topico no es valido."
+            );
+        }
+
+        // Limitar particiones en este laboratorio
+        if (cantidadParticiones < 1
+                || cantidadParticiones > 20) {
+
+            throw new IllegalArgumentException(
+                    "Las particiones deben estar entre 1 y 20."
+            );
+        }
+
+        // Actualmente solo tenemos un broker
+        if (factorReplicacion != 1) {
+
+            throw new IllegalArgumentException(
+                    "El laboratorio actual requiere replicacion 1."
+            );
+        }
+
+        try (AdminClient admin = AdminClient.create(propiedades)) {
+
+            // Definir el nuevo topico
+            NewTopic nuevoTopico = new NewTopic(
+                    nombre,
+                    cantidadParticiones,
+                    factorReplicacion
+            );
+
+            // Configuraciones iniciales
+            nuevoTopico.configs(
+                    Map.of(
+                            "retention.ms", RETENCION_INICIAL,
+                            "cleanup.policy", "delete",
+                            "min.insync.replicas", "1"
+                    )
+            );
+
+            // Solicitar la creacion al broker
+            admin.createTopics(
+                    List.of(nuevoTopico)
+            ).all().get(10, TimeUnit.SECONDS);
+
+            // Preparar respuesta para la API REST
+            Map<String, Object> resultado = new HashMap<>();
+
+            resultado.put("nombre", nombre);
+            resultado.put(
+                    "particiones",
+                    cantidadParticiones
+            );
+            resultado.put(
+                    "replicas",
+                    factorReplicacion
+            );
+            resultado.put(
+                    "retencionMs",
+                    Long.parseLong(RETENCION_INICIAL)
+            );
+            resultado.put(
+                    "mensaje",
+                    "Topico creado correctamente."
+            );
 
             return resultado;
         }

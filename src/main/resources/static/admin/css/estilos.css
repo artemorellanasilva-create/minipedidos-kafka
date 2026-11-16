@@ -1,7 +1,12 @@
 
 /* =========================================
-   MiniPedidos V2 - Sesion 3
-   Panel de administracion de Kafka
+   MiniPedidos V2 - Sesion 3 - Parte 3
+   Dashboard de administracion de Kafka
+   Autenticacion y administracion de usuarios
+   ========================================= */
+
+/* =========================================
+   1. VARIABLES DE DISENO
    ========================================= */
 
 :root {
@@ -13,7 +18,12 @@
     --borde: #d8e1eb;
     --verde: #18794e;
     --rojo: #b42318;
+    --gris: #64748b;
 }
+
+/* =========================================
+   2. CONFIGURACION GENERAL
+   ========================================= */
 
 * {
     box-sizing: border-box;
@@ -27,7 +37,9 @@ body {
     line-height: 1.5;
 }
 
-/* Encabezado */
+/* =========================================
+   3. ENCABEZADO
+   ========================================= */
 
 .encabezado {
     background-color: var(--blanco);
@@ -46,7 +58,9 @@ body {
     color: #52657d;
 }
 
-/* Distribucion */
+/* =========================================
+   4. DISTRIBUCION PRINCIPAL
+   ========================================= */
 
 .contenedor {
     display: grid;
@@ -71,7 +85,14 @@ body {
     font-size: 21px;
 }
 
-/* Formulario */
+.tarjeta h3 {
+    color: var(--azul);
+    font-size: 17px;
+}
+
+/* =========================================
+   5. FORMULARIOS
+   ========================================= */
 
 form {
     margin-top: 24px;
@@ -101,11 +122,20 @@ select:focus {
     outline-offset: 1px;
 }
 
+input:disabled,
+select:disabled {
+    background-color: #eef2f6;
+    color: #64748b;
+    cursor: not-allowed;
+}
+
 [hidden] {
     display: none !important;
 }
 
-/* Boton */
+/* =========================================
+   6. BOTONES
+   ========================================= */
 
 button {
     background-color: var(--azul);
@@ -128,7 +158,35 @@ button:not(:disabled):hover {
     background-color: #285782;
 }
 
-/* Resultados */
+.boton-secundario {
+    background-color: var(--azul-claro);
+    color: var(--azul);
+    border: 1px solid var(--borde);
+}
+
+.boton-secundario:not(:disabled):hover {
+    background-color: #d8e8f7;
+}
+
+.boton-peligro {
+    background-color: var(--rojo);
+    color: var(--blanco);
+}
+
+.boton-peligro:not(:disabled):hover {
+    background-color: #922018;
+}
+
+.grupo-botones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+/* =========================================
+   7. RESULTADOS Y MENSAJES
+   ========================================= */
 
 #estado-operacion {
     padding: 12px;
@@ -136,6 +194,29 @@ button:not(:disabled):hover {
     border-radius: 6px;
     margin: 18px 0;
 }
+
+.mensaje {
+    padding: 12px;
+    border-radius: 6px;
+    margin: 16px 0;
+    background: var(--azul-claro);
+}
+
+.mensaje-exito {
+    color: var(--verde);
+}
+
+.mensaje-error {
+    color: var(--rojo);
+}
+
+.mensaje-advertencia {
+    color: #92400e;
+}
+
+/* =========================================
+   8. TABLAS
+   ========================================= */
 
 .tabla-contenedor {
     overflow-x: auto;
@@ -166,27 +247,188 @@ th {
     margin-top: 16px;
 }
 
-.mensaje-exito {
+/* =========================================
+   9. NAVEGACION DEL DASHBOARD
+   ========================================= */
+
+.navegacion-admin {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 6%;
+    background: var(--blanco);
+    border-bottom: 1px solid var(--borde);
+}
+
+.enlace-navegacion {
+    display: inline-block;
+    padding: 10px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--azul);
+    background: var(--azul-claro);
+}
+
+.enlace-navegacion:hover,
+.enlace-navegacion.activo {
+    background: var(--azul);
+    color: var(--blanco);
+}
+
+.usuario-actual {
+    margin-left: auto;
+    color: var(--gris);
+    font-size: 14px;
+}
+
+/* =========================================
+   10. FORMULARIO DE INICIO DE SESION
+   ========================================= */
+
+.pagina-login {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.tarjeta-login {
+    width: 100%;
+    max-width: 430px;
+    background: var(--blanco);
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    padding: 32px;
+    box-shadow: 0 5px 20px rgba(20, 43, 70, 0.08);
+}
+
+.tarjeta-login h1 {
+    margin: 0;
+    color: var(--azul);
+    font-size: 27px;
+}
+
+.tarjeta-login h2 {
+    margin-top: 18px;
+    color: var(--azul);
+    font-size: 20px;
+}
+
+.tarjeta-login p {
+    color: var(--gris);
+}
+
+.tarjeta-login button {
+    width: 100%;
+}
+
+.error-login {
+    color: var(--rojo);
+    background: #fff1f0;
+    border: 1px solid #f5c2bd;
+    border-radius: 6px;
+    padding: 12px;
+    margin-top: 16px;
+}
+
+/* =========================================
+   11. ADMINISTRACION DE USUARIOS
+   ========================================= */
+
+.contenedor-usuarios {
+    max-width: 1200px;
+    margin: 35px auto;
+    padding: 0 20px;
+}
+
+.cabecera-modulo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.cabecera-modulo h2 {
+    margin: 0;
+    color: var(--azul);
+}
+
+.grid-usuarios {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 24px;
+}
+
+.acciones-usuario {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.acciones-usuario button {
+    margin-top: 0;
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+/* =========================================
+   12. ETIQUETAS DE ROLES Y ESTADOS
+   ========================================= */
+
+.etiqueta {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.rol-admin {
+    background: #e7effa;
+    color: var(--azul);
+}
+
+.rol-estudiante {
+    background: #edf7ee;
     color: var(--verde);
 }
 
-.mensaje-error {
-    color: var(--rojo);
+.estado-activo {
+    color: var(--verde);
+    font-weight: 600;
 }
 
-/* Pie de pagina */
+.estado-inactivo {
+    color: var(--rojo);
+    font-weight: 600;
+}
+
+/* =========================================
+   13. PIE DE PAGINA
+   ========================================= */
 
 footer {
     text-align: center;
     padding: 20px;
-    color: #64748b;
+    color: var(--gris);
     font-size: 13px;
 }
 
-/* Adaptacion a pantallas pequenas */
+/* =========================================
+   14. ADAPTACION A PANTALLAS PEQUENAS
+   ========================================= */
 
 @media (max-width: 850px) {
-    .contenedor {
+
+    .contenedor,
+    .grid-usuarios {
         grid-template-columns: 1fr;
     }
 
@@ -196,5 +438,30 @@ footer {
 
     .tarjeta {
         padding: 20px;
+    }
+
+    .navegacion-admin {
+        padding: 14px 20px;
+    }
+
+    .usuario-actual {
+        margin-left: 0;
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+
+    .tarjeta-login {
+        padding: 22px;
+    }
+
+    .grupo-botones {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .grupo-botones button {
+        width: 100%;
     }
 }

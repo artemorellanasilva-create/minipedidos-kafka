@@ -1,41 +1,56 @@
 
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
+
     <meta name="viewport"
           content="width=device-width, initial-scale=1.0">
 
     <title>MiniPedidos V2 | Administración Kafka</title>
 
     <link rel="stylesheet" href="css/estilos.css">
+
     <script src="js/admin-kafka.js" defer></script>
 </head>
 
 <body>
 
 <header class="encabezado">
+
     <h1>MiniPedidos V2</h1>
+
     <p>Panel de Administración de Apache Kafka</p>
+
 </header>
 
 <main class="contenedor">
 
+    <!-- ======================================
+         PANEL DE ADMINISTRACION
+         ====================================== -->
+
     <section class="tarjeta">
+
         <h2>Administración de tópicos</h2>
 
         <p>
-            Consulta los tópicos, particiones,
-            réplicas y configuraciones de Kafka.
+            Consulta y administra tópicos,
+            particiones, réplicas y configuraciones
+            de Apache Kafka.
         </p>
 
         <form id="form-administracion">
+
+            <!-- SELECCIONAR OPERACION -->
 
             <label for="operacion">
                 Selecciona una operación
             </label>
 
             <select id="operacion" name="operacion">
+
                 <option value="listar">
                     Listar tópicos
                 </option>
@@ -55,9 +70,13 @@
                 <option value="retencion">
                     Modificar retención
                 </option>
+
             </select>
 
-            <div id="grupo-topico">
+            <!-- NOMBRE DEL TOPICO -->
+
+            <div id="grupo-topico" hidden>
+
                 <label for="topico">
                     Nombre del tópico
                 </label>
@@ -66,12 +85,17 @@
                     type="text"
                     id="topico"
                     name="topico"
-                    placeholder="Ej: pedidos-creados"
+                    placeholder="Ej: pedidos-prueba"
                     maxlength="249"
+                    autocomplete="off"
                 >
+
             </div>
 
+            <!-- NUMERO DE PARTICIONES -->
+
             <div id="grupo-particiones" hidden>
+
                 <label for="particiones">
                     Número de particiones
                 </label>
@@ -81,11 +105,16 @@
                     id="particiones"
                     name="particiones"
                     min="1"
+                    max="20"
                     value="3"
                 >
+
             </div>
 
+            <!-- FACTOR DE REPLICACION -->
+
             <div id="grupo-replicas" hidden>
+
                 <label for="replicas">
                     Factor de replicación
                 </label>
@@ -95,11 +124,16 @@
                     id="replicas"
                     name="replicas"
                     min="1"
+                    max="1"
                     value="1"
                 >
+
             </div>
 
+            <!-- RETENCION -->
+
             <div id="grupo-retencion" hidden>
+
                 <label for="retencion">
                     Retención en días
                 </label>
@@ -111,7 +145,33 @@
                     min="1"
                     value="7"
                 >
+
             </div>
+
+            <!-- AUTORIZACION ADMINISTRATIVA -->
+
+            <div id="grupo-autorizacion" hidden>
+
+                <label for="token-admin">
+                    Token administrativo
+                </label>
+
+                <input
+                    type="password"
+                    id="token-admin"
+                    name="token-admin"
+                    placeholder="Ingrese el token autorizado"
+                    autocomplete="off"
+                >
+
+                <p>
+                    Este campo es obligatorio para
+                    operaciones que modifican Kafka.
+                </p>
+
+            </div>
+
+            <!-- BOTON DE EJECUCION -->
 
             <button
                 type="submit"
@@ -122,7 +182,12 @@
             </button>
 
         </form>
+
     </section>
+
+    <!-- ======================================
+         RESULTADOS DE LAS OPERACIONES
+         ====================================== -->
 
     <section class="tarjeta">
 
@@ -137,21 +202,27 @@
         </div>
 
         <div class="tabla-contenedor">
+
             <table id="tabla-resultados">
 
                 <thead>
+
                     <tr>
                         <th>Tópico</th>
                         <th>Particiones</th>
                         <th>Réplicas</th>
                     </tr>
+
                 </thead>
 
                 <tbody id="cuerpo-resultados">
                 </tbody>
 
             </table>
+
         </div>
+
+        <!-- RESPUESTA TECNICA JSON -->
 
         <pre id="detalle-resultados"></pre>
 
@@ -160,11 +231,13 @@
 </main>
 
 <footer>
+
     <p>
         Cloud Native I |
         MiniPedidos V2 |
         Apache Kafka
     </p>
+
 </footer>
 
 </body>
