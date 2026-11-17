@@ -3,7 +3,8 @@ package cl.minipedidos.kafka.security;
 
 // ==========================================
 // MINIPEDIDOS V2 - SESION 3 - PARTE 3
-// SEGURIDAD CON SPRING SECURITY Y H2
+// SPRING SECURITY + H2
+// AUTENTICACION Y REDIRECCION AL DASHBOARD
 // ==========================================
 
 import javax.sql.DataSource;
@@ -20,8 +21,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
-import static org.springframework.security.config.Customizer.withDefaults;
-
 @Configuration
 public class SecurityConfig {
 
@@ -31,6 +30,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
+
         return new BCryptPasswordEncoder();
     }
 
@@ -68,27 +68,44 @@ public class SecurityConfig {
 
         http.authorizeHttpRequests(auth -> auth
 
-                // Configuracion inicial del administrador.
-                // El controlador verifica la clave de
-                // activacion y si ya existe la cuenta.
+                // ----------------------------------
+                // A. CONFIGURACION INICIAL
+                // ----------------------------------
+
                 .requestMatchers("/setup/admin")
                 .permitAll()
 
-                // Consultas de topicos
+                // ----------------------------------
+                // B. RECUPERACION DE CONTRASENA
+                // ----------------------------------
+
+                .requestMatchers("/recovery/admin")
+                .permitAll()
+
+                // ----------------------------------
+                // C. CONSULTAS KAFKA
+                // ----------------------------------
+
                 .requestMatchers(
                         HttpMethod.GET,
                         "/api/admin/kafka/**"
                 )
                 .hasAnyRole("ADMIN", "ESTUDIANTE")
 
-                // Creacion de topicos
+                // ----------------------------------
+                // D. CREACION DE TOPICOS
+                // ----------------------------------
+
                 .requestMatchers(
                         HttpMethod.POST,
                         "/api/admin/kafka/**"
                 )
                 .hasRole("ADMIN")
 
-                // Modificacion de topicos
+                // ----------------------------------
+                // E. MODIFICACION DE TOPICOS
+                // ----------------------------------
+
                 .requestMatchers(
                         HttpMethod.PUT,
                         "/api/admin/kafka/**"
@@ -107,7 +124,10 @@ public class SecurityConfig {
                 )
                 .hasRole("ADMIN")
 
-                // Gestion de usuarios
+                // ----------------------------------
+                // F. ADMINISTRACION DE USUARIOS
+                // ----------------------------------
+
                 .requestMatchers(
                         "/api/admin/usuarios/**"
                 )
@@ -118,26 +138,63 @@ public class SecurityConfig {
                 )
                 .hasRole("ADMIN")
 
-                // Dashboard
+                // ----------------------------------
+                // G. DASHBOARD
+                // ----------------------------------
+
                 .requestMatchers("/admin/**")
                 .authenticated()
 
-                // Otras rutas administrativas
+                // ----------------------------------
+                // H. OTRAS RUTAS ADMINISTRATIVAS
+                // ----------------------------------
+
                 .requestMatchers("/api/admin/**")
                 .denyAll()
 
-                // Rutas existentes de MiniPedidos
+                // ----------------------------------
+                // I. RUTAS EXISTENTES
+                // ----------------------------------
+
                 .anyRequest()
                 .permitAll()
         );
 
-        // Inicio de sesion
-        http.formLogin(withDefaults());
+        // ==========================================
+        // 4. INICIO DE SESION
+        // ==========================================
 
-        // Cierre de sesion
-        http.logout(withDefaults());
+        http.formLogin(form -> form
 
-        // Mantener proteccion CSRF activada
+                // Redirigir al dashboard despues
+                // de iniciar sesion correctamente.
+                // Se utiliza una ruta relativa
+                // al servidor, no localhost.
+                .defaultSuccessUrl(
+                        "/admin/index.html",
+                        true
+                )
+
+                .permitAll()
+        );
+
+        // ==========================================
+        // 5. CIERRE DE SESION
+        // ==========================================
+
+        http.logout(logout -> logout
+
+                .logoutSuccessUrl("/login?logout")
+                .permitAll()
+        );
+
+        // ==========================================
+        // 6. PROTECCION CSRF
+        // ==========================================
+
+        // Se conserva la proteccion CSRF
+        // para formularios y operaciones POST.
+
         return http.build();
     }
 }

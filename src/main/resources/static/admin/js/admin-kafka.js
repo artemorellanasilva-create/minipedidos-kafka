@@ -1,7 +1,10 @@
 
 /*
- * MiniPedidos V2 - Sesion 3 - Parte 2
- * Panel de administracion de Apache Kafka
+ * ==========================================
+ * MINIPEDIDOS V2 - SESION 3 - PARTE 3
+ * DASHBOARD DE ADMINISTRACION KAFKA
+ * INTEGRACION CON SPRING SECURITY Y CSRF
+ * ==========================================
  *
  * Operaciones:
  * 1. Listar topicos
@@ -39,9 +42,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const grupoRetencion =
         document.getElementById("grupo-retencion");
 
-    const grupoAutorizacion =
-        document.getElementById("grupo-autorizacion");
-
     const nombreTopico =
         document.getElementById("topico");
 
@@ -53,9 +53,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const retencion =
         document.getElementById("retencion");
-
-    const tokenAdmin =
-        document.getElementById("token-admin");
 
     const boton =
         document.getElementById("btn-ejecutar");
@@ -69,7 +66,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const detalle =
         document.getElementById("detalle-resultados");
 
+    // ==========================================
+    // 2. DIRECCIONES DE LA API
+    // ==========================================
+
     const API = "/api/admin/kafka";
+
+    /*
+     * Este endpoint se implementara en el
+     * siguiente paso, en Spring Boot.
+     *
+     * Entregara el token CSRF correspondiente
+     * a la sesion autenticada.
+     */
+    const API_CSRF = "/admin/csrf";
 
     const operacionesDisponibles = [
         "listar",
@@ -79,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ];
 
     // ==========================================
-    // 2. ACTUALIZAR EL FORMULARIO
+    // 3. ACTUALIZAR EL FORMULARIO
     // ==========================================
 
     function actualizarFormulario() {
@@ -96,25 +106,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
         grupoRetencion.hidden = !esRetencion;
 
-        grupoAutorizacion.hidden =
-            !(esCreacion || esRetencion);
-
-        nombreTopico.required = seleccion !== "listar";
+        nombreTopico.required =
+            seleccion !== "listar";
 
         particiones.required = esCreacion;
         replicas.required = esCreacion;
 
         retencion.required = esRetencion;
 
-        tokenAdmin.required = esCreacion || esRetencion;
-
-        // No conservar el token al cambiar de operacion
-        tokenAdmin.value = "";
-
         boton.disabled =
             !operacionesDisponibles.includes(seleccion);
 
         cuerpoTabla.replaceChildren();
+
         detalle.textContent = "";
 
         estado.className = "";
@@ -125,7 +129,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // 3. AGREGAR RESULTADOS A LA TABLA
+    // 4. AGREGAR RESULTADOS A LA TABLA
     // ==========================================
 
     function agregarFila(
@@ -135,11 +139,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const fila = document.createElement("tr");
 
-        for (const valor of [
+        const valores = [
             nombre,
             cantidad,
             replicasTexto
-        ]) {
+        ];
+
+        for (const valor of valores) {
 
             const celda = document.createElement("td");
 
@@ -152,29 +158,38 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // 4. PROCESAR RESPUESTAS HTTP
+    // 5. PROCESAR RESPUESTAS HTTP
     // ==========================================
 
     async function procesarRespuesta(respuesta) {
 
-        const datos = await respuesta.json();
+        const tipoContenido =
+            respuesta.headers.get("content-type") || "";
+
+        let datos = null;
+
+        if (tipoContenido.includes("application/json")) {
+            datos = await respuesta.json();
+        }
 
         if (!respuesta.ok) {
 
             let mensaje =
                 `Error HTTP ${respuesta.status}`;
 
-            if (datos && datos.error) {
+            if (respuesta.status === 401) {
 
-                mensaje = datos.error;
-
-            } else if (respuesta.status === 404) {
-
-                mensaje = "El tópico no existe.";
+                mensaje =
+                    "La sesión no está autenticada. Inicia sesión nuevamente.";
 
             } else if (respuesta.status === 403) {
 
-                mensaje = "Acceso administrativo denegado.";
+                mensaje =
+                    "Acceso denegado. Verifica tus permisos o la sesión CSRF.";
+
+            } else if (respuesta.status === 404) {
+
+                mensaje = "El recurso solicitado no existe.";
 
             } else if (respuesta.status === 409) {
 
@@ -182,17 +197,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
             } else if (respuesta.status === 503) {
 
-                mensaje = "Kafka no está disponible.";
+                mensaje = "El servicio Kafka no está disponible.";
+            }
+
+            if (datos && datos.error) {
+                mensaje = datos.error;
             }
 
             throw new Error(mensaje);
+        }
+
+        if (!tipoContenido.includes("application/json")) {
+
+            throw new Error(
+                "El servidor no devolvió JSON. Verifica que tu sesión siga activa."
+            );
         }
 
         return datos;
     }
 
     // ==========================================
-    // 5. CONSULTAS GET
+    // 6. CONSULTAS GET
     // ==========================================
 
     async function consultarAPI(ruta) {
@@ -200,6 +226,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const respuesta = await fetch(ruta, {
 
             method: "GET",
+
+            credentials: "same-origin",
 
             headers: {
                 "Accept": "application/json"
@@ -212,7 +240,34 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // 6. VALIDAR EL NOMBRE DEL TOPICO
+    // 7. OBTENER TOKEN CSRF
+    // ==========================================
+
+    async function obtenerCSRF() {
+
+        const datos = await consultarAPI(API_CSRF);
+
+        if (
+            !datos ||
+            typeof datos.token !== "string" ||
+            !datos.token ||
+            typeof datos.headerName !== "string" ||
+            !datos.headerName
+        ) {
+
+            throw new Error(
+                "No fue posible obtener la protección CSRF de la sesión."
+            );
+        }
+
+        return {
+            token: datos.token,
+            headerName: datos.headerName
+        };
+    }
+
+    // ==========================================
+    // 8. VALIDAR NOMBRE DEL TOPICO
     // ==========================================
 
     function obtenerNombreTopico() {
@@ -234,7 +289,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // 7. CREAR TOPICO CON POST
+    // 9. CREAR TOPICO CON SPRING SECURITY
     // ==========================================
 
     async function crearTopico() {
@@ -247,6 +302,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const factorReplicacion =
             Number(replicas.value);
 
+        // Validar particiones
+
         if (
             !Number.isInteger(cantidadParticiones) ||
             cantidadParticiones < 1 ||
@@ -258,6 +315,8 @@ document.addEventListener("DOMContentLoaded", () => {
             );
         }
 
+        // Validar replicas
+
         if (factorReplicacion !== 1) {
 
             throw new Error(
@@ -265,14 +324,11 @@ document.addEventListener("DOMContentLoaded", () => {
             );
         }
 
-        const token = tokenAdmin.value;
+        // Obtener CSRF de la sesion autenticada
 
-        if (!token.trim()) {
+        const csrf = await obtenerCSRF();
 
-            throw new Error(
-                "Debe ingresar el token administrativo."
-            );
-        }
+        // Enviar solicitud POST a Spring Boot
 
         const respuesta = await fetch(
             `${API}/topicos`,
@@ -280,10 +336,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 method: "POST",
 
+                credentials: "same-origin",
+
                 headers: {
                     "Content-Type": "application/json",
                     "Accept": "application/json",
-                    "X-Admin-Token": token
+                    [csrf.headerName]: csrf.token
                 },
 
                 body: JSON.stringify({
@@ -300,7 +358,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // 8. EJECUTAR OPERACIONES
+    // 10. EJECUTAR OPERACIONES
     // ==========================================
 
     async function ejecutarOperacion(evento) {
@@ -439,9 +497,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } finally {
 
-            // Borrar siempre el token del formulario
-            tokenAdmin.value = "";
-
             boton.disabled =
                 !operacionesDisponibles.includes(
                     operacion.value
@@ -450,7 +505,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // 9. EVENTOS
+    // 11. EVENTOS
     // ==========================================
 
     operacion.addEventListener(
@@ -463,11 +518,12 @@ document.addEventListener("DOMContentLoaded", () => {
         ejecutarOperacion
     );
 
-    // Inicializar
+    // Inicializar formulario
+
     actualizarFormulario();
 
     console.log(
-        "MiniPedidos V2: panel administrativo inicializado."
+        "MiniPedidos V2: dashboard conectado a Spring Security."
     );
 
 });

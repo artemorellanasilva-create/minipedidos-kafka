@@ -17,6 +17,11 @@
 
 <body>
 
+<!-- ==========================================
+     MINIPEDIDOS V2 - SESION 3 - PARTE 3
+     DASHBOARD CON SPRING SECURITY
+     ========================================== -->
+
 <header class="encabezado">
 
     <h1>MiniPedidos V2</h1>
@@ -28,7 +33,7 @@
 <main class="contenedor">
 
     <!-- ======================================
-         PANEL DE ADMINISTRACION
+         1. PANEL DE ADMINISTRACION
          ====================================== -->
 
     <section class="tarjeta">
@@ -49,7 +54,10 @@
                 Selecciona una operación
             </label>
 
-            <select id="operacion" name="operacion">
+            <select
+                id="operacion"
+                name="operacion"
+            >
 
                 <option value="listar">
                     Listar tópicos
@@ -148,28 +156,19 @@
 
             </div>
 
-            <!-- AUTORIZACION ADMINISTRATIVA -->
+            <!-- ==================================
+                 SEGURIDAD
+                 ==================================
 
-            <div id="grupo-autorizacion" hidden>
+                 Ya no se solicita el token manual.
 
-                <label for="token-admin">
-                    Token administrativo
-                </label>
+                 Spring Security controla los
+                 permisos mediante la sesion
+                 autenticada del usuario.
 
-                <input
-                    type="password"
-                    id="token-admin"
-                    name="token-admin"
-                    placeholder="Ingrese el token autorizado"
-                    autocomplete="off"
-                >
-
-                <p>
-                    Este campo es obligatorio para
-                    operaciones que modifican Kafka.
-                </p>
-
-            </div>
+                 El token CSRF se obtendra desde
+                 el backend mediante JavaScript.
+                 ================================== -->
 
             <!-- BOTON DE EJECUCION -->
 
@@ -186,7 +185,7 @@
     </section>
 
     <!-- ======================================
-         RESULTADOS DE LAS OPERACIONES
+         2. RESULTADOS DE LAS OPERACIONES
          ====================================== -->
 
     <section class="tarjeta">
@@ -206,13 +205,11 @@
             <table id="tabla-resultados">
 
                 <thead>
-
                     <tr>
                         <th>Tópico</th>
                         <th>Particiones</th>
                         <th>Réplicas</th>
                     </tr>
-
                 </thead>
 
                 <tbody id="cuerpo-resultados">
@@ -229,6 +226,10 @@
     </section>
 
 </main>
+
+<!-- ==========================================
+     3. PIE DE PAGINA
+     ========================================== -->
 
 <footer>
 

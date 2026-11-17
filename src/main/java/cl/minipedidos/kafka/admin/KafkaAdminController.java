@@ -1,19 +1,22 @@
 
 package cl.minipedidos.kafka.admin;
 
+// ==========================================
+// MINIPEDIDOS V2 - SESION 3 - PARTE 3
+// ADMINISTRACION DE TOPICOS KAFKA
+// AUTORIZACION MEDIANTE SPRING SECURITY
+// ==========================================
+
 // Apache Kafka
 import org.apache.kafka.common.errors.TopicExistsException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 
 // Spring Boot
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 // Java
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -23,19 +26,15 @@ import java.util.concurrent.ExecutionException;
 public class KafkaAdminController {
 
     private final KafkaAdminService servicio;
-    private final String tokenAdministrativo;
 
     // =========================================
     // 1. CONFIGURACION DEL CONTROLADOR
     // =========================================
 
     public KafkaAdminController(
-            KafkaAdminService servicio,
-            @Value("${MINIPEDIDOS_ADMIN_TOKEN:}")
-            String tokenAdministrativo) {
+            KafkaAdminService servicio) {
 
         this.servicio = servicio;
-        this.tokenAdministrativo = tokenAdministrativo;
     }
 
     // =========================================
@@ -47,7 +46,8 @@ public class KafkaAdminController {
 
         try {
 
-            List<String> topicos = servicio.listarTopicos();
+            List<String> topicos =
+                    servicio.listarTopicos();
 
             return ResponseEntity.ok(topicos);
 
@@ -112,41 +112,25 @@ public class KafkaAdminController {
     // 6. CREAR UN NUEVO TOPICO
     // =========================================
 
+    /*
+     * La autorizacion se realiza mediante
+     * Spring Security.
+     *
+     * POST /api/admin/kafka/topicos
+     * Requiere ROLE_ADMIN.
+     *
+     * Spring Security tambien verifica CSRF.
+     */
+
     @PostMapping("/topicos")
     public ResponseEntity<?> crearTopico(
-            @RequestHeader(
-                    value = "X-Admin-Token",
-                    required = false
-            )
-            String tokenRecibido,
-
             @RequestBody
             CrearTopicoSolicitud solicitud) {
 
-        // Verificar que exista un token configurado
-        if (tokenAdministrativo == null
-                || tokenAdministrativo.isBlank()) {
+        // =====================================
+        // 6.1. VALIDAR DATOS RECIBIDOS
+        // =====================================
 
-            return ResponseEntity.status(
-                    HttpStatus.SERVICE_UNAVAILABLE
-            ).body(Map.of(
-                    "error",
-                    "La administracion no esta configurada."
-            ));
-        }
-
-        // Validar autorizacion administrativa
-        if (!tokenValido(tokenRecibido)) {
-
-            return ResponseEntity.status(
-                    HttpStatus.FORBIDDEN
-            ).body(Map.of(
-                    "error",
-                    "Acceso administrativo no autorizado."
-            ));
-        }
-
-        // Validar datos recibidos
         if (solicitud == null
                 || solicitud.nombre() == null
                 || solicitud.particiones() == null
@@ -160,6 +144,10 @@ public class KafkaAdminController {
             );
         }
 
+        // =====================================
+        // 6.2. VALIDAR CANTIDAD DE PARTICIONES
+        // =====================================
+
         if (solicitud.particiones() < 1
                 || solicitud.particiones() > 20) {
 
@@ -171,6 +159,10 @@ public class KafkaAdminController {
             );
         }
 
+        // =====================================
+        // 6.3. VALIDAR FACTOR DE REPLICACION
+        // =====================================
+
         if (solicitud.replicas() != 1) {
 
             return ResponseEntity.badRequest().body(
@@ -180,6 +172,10 @@ public class KafkaAdminController {
                     )
             );
         }
+
+        // =====================================
+        // 6.4. CREAR TOPICO EN APACHE KAFKA
+        // =====================================
 
         try {
 
@@ -210,31 +206,7 @@ public class KafkaAdminController {
     }
 
     // =========================================
-    // 7. VALIDAR TOKEN ADMINISTRATIVO
-    // =========================================
-
-    private boolean tokenValido(String tokenRecibido) {
-
-        if (tokenRecibido == null) {
-            return false;
-        }
-
-        byte[] esperado = tokenAdministrativo.getBytes(
-                StandardCharsets.UTF_8
-        );
-
-        byte[] recibido = tokenRecibido.getBytes(
-                StandardCharsets.UTF_8
-        );
-
-        return MessageDigest.isEqual(
-                esperado,
-                recibido
-        );
-    }
-
-    // =========================================
-    // 8. MANEJO DE ERRORES KAFKA
+    // 7. MANEJO DE ERRORES DE KAFKA
     // =========================================
 
     private ResponseEntity<?> manejarError(Exception e) {
@@ -247,6 +219,7 @@ public class KafkaAdminController {
             causa = causa.getCause();
         }
 
+        // Topico inexistente
         if (causa instanceof UnknownTopicOrPartitionException) {
 
             return ResponseEntity.status(
@@ -257,6 +230,7 @@ public class KafkaAdminController {
             ));
         }
 
+        // Topico duplicado
         if (causa instanceof TopicExistsException) {
 
             return ResponseEntity.status(
@@ -271,7 +245,7 @@ public class KafkaAdminController {
     }
 
     // =========================================
-    // 9. ERROR DE SERVICIO
+    // 8. ERROR DE SERVICIO
     // =========================================
 
     private ResponseEntity<?> errorServicio() {
