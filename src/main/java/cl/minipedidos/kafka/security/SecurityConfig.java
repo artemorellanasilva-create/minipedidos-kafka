@@ -1,21 +1,23 @@
 
 package cl.minipedidos.kafka.security;
 
-import org.springframework.beans.factory.annotation.Value;
+// ==========================================
+// MINIPEDIDOS V2 - SESION 3 - PARTE 3
+// SEGURIDAD CON SPRING SECURITY Y H2
+// ==========================================
+
+import javax.sql.DataSource;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
 import org.springframework.http.HttpMethod;
 
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 import static org.springframework.security.config.Customizer.withDefaults;
@@ -23,59 +25,42 @@ import static org.springframework.security.config.Customizer.withDefaults;
 @Configuration
 public class SecurityConfig {
 
-    // =========================================
+    // ==========================================
     // 1. CIFRADO DE CONTRASENAS
-    // =========================================
+    // ==========================================
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-
         return new BCryptPasswordEncoder();
     }
 
-    // =========================================
-    // 2. USUARIOS Y ROLES DEL LABORATORIO
-    // =========================================
+    // ==========================================
+    // 2. USUARIOS PERSISTENTES EN H2
+    // ==========================================
 
     @Bean
-    public UserDetailsService userDetailsService(
-            PasswordEncoder encoder,
+    public JdbcUserDetailsManager userDetailsService(
+            DataSource dataSource) {
 
-            @Value("${MINIPEDIDOS_ADMIN_PASSWORD:}")
-            String claveAdmin,
+        JdbcUserDetailsManager usuarios =
+                new JdbcUserDetailsManager(dataSource);
 
-            @Value("${MINIPEDIDOS_ESTUDIANTE_PASSWORD:}")
-            String claveEstudiante) {
-
-        if (claveAdmin.isBlank()
-                || claveEstudiante.isBlank()) {
-
-            throw new IllegalStateException(
-                "Configure las contrasenas del laboratorio."
-            );
-        }
-
-        UserDetails administrador = User.builder()
-                .username("admin")
-                .password(encoder.encode(claveAdmin))
-                .roles("ADMIN")
-                .build();
-
-        UserDetails estudiante = User.builder()
-                .username("estudiante")
-                .password(encoder.encode(claveEstudiante))
-                .roles("ESTUDIANTE")
-                .build();
-
-        return new InMemoryUserDetailsManager(
-                administrador,
-                estudiante
+        usuarios.setUsersByUsernameQuery(
+                "SELECT username, password, enabled " +
+                "FROM users WHERE username = ?"
         );
+
+        usuarios.setAuthoritiesByUsernameQuery(
+                "SELECT username, authority " +
+                "FROM authorities WHERE username = ?"
+        );
+
+        return usuarios;
     }
 
-    // =========================================
-    // 3. AUTORIZACION DE LAS OPERACIONES
-    // =========================================
+    // ==========================================
+    // 3. SEGURIDAD Y AUTORIZACION
+    // ==========================================
 
     @Bean
     public SecurityFilterChain securityFilterChain(
@@ -83,22 +68,35 @@ public class SecurityConfig {
 
         http.authorizeHttpRequests(auth -> auth
 
-                // Consultas administrativas
+                // Configuracion inicial del administrador.
+                // El controlador verifica la clave de
+                // activacion y si ya existe la cuenta.
+                .requestMatchers("/setup/admin")
+                .permitAll()
+
+                // Consultas de topicos
                 .requestMatchers(
                         HttpMethod.GET,
                         "/api/admin/kafka/**"
                 )
                 .hasAnyRole("ADMIN", "ESTUDIANTE")
 
-                // Operaciones que modifican Kafka
+                // Creacion de topicos
                 .requestMatchers(
                         HttpMethod.POST,
                         "/api/admin/kafka/**"
                 )
                 .hasRole("ADMIN")
 
+                // Modificacion de topicos
                 .requestMatchers(
                         HttpMethod.PUT,
+                        "/api/admin/kafka/**"
+                )
+                .hasRole("ADMIN")
+
+                .requestMatchers(
+                        HttpMethod.PATCH,
                         "/api/admin/kafka/**"
                 )
                 .hasRole("ADMIN")
@@ -109,27 +107,37 @@ public class SecurityConfig {
                 )
                 .hasRole("ADMIN")
 
-                // Acceso al dashboard
+                // Gestion de usuarios
+                .requestMatchers(
+                        "/api/admin/usuarios/**"
+                )
+                .hasRole("ADMIN")
+
+                .requestMatchers(
+                        "/admin/usuarios/**"
+                )
+                .hasRole("ADMIN")
+
+                // Dashboard
                 .requestMatchers("/admin/**")
                 .authenticated()
 
-                // Denegar otros metodos administrativos
-                .requestMatchers("/api/admin/kafka/**")
+                // Otras rutas administrativas
+                .requestMatchers("/api/admin/**")
                 .denyAll()
 
-                // Conservar las rutas existentes
-                // de MiniPedidos V2
+                // Rutas existentes de MiniPedidos
                 .anyRequest()
                 .permitAll()
         );
 
-        // Formulario de inicio de sesion
+        // Inicio de sesion
         http.formLogin(withDefaults());
 
-        // Permitir cerrar sesion
+        // Cierre de sesion
         http.logout(withDefaults());
 
-        // CSRF permanece habilitado
+        // Mantener proteccion CSRF activada
         return http.build();
     }
 }

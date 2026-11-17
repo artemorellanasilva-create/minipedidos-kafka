@@ -7,10 +7,7 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- ==========================================
-         1. SPRING BOOT
-         ========================================== -->
-
+    <!-- SPRING BOOT -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -18,69 +15,64 @@
         <relativePath/>
     </parent>
 
-    <!-- ==========================================
-         2. INFORMACION DEL PROYECTO
-         ========================================== -->
-
+    <!-- PROYECTO -->
     <groupId>cl.minipedidos</groupId>
     <artifactId>minipedidos-kafka</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-
     <name>minipedidos-kafka</name>
     <description>MiniPedidos V2 con Apache Kafka</description>
-
-    <!-- ==========================================
-         3. VERSION DE JAVA
-         ========================================== -->
 
     <properties>
         <java.version>25</java.version>
     </properties>
 
-    <!-- ==========================================
-         4. DEPENDENCIAS
-         ========================================== -->
-
     <dependencies>
 
-        <!-- Apache Kafka -->
+        <!-- APACHE KAFKA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-kafka</artifactId>
         </dependency>
 
-        <!-- Aplicacion web y API REST -->
+        <!-- API REST Y DASHBOARD -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
 
-        <!-- Kafka Streams -->
+        <!-- KAFKA STREAMS -->
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-streams</artifactId>
         </dependency>
 
-        <!-- ======================================
-             SESION 3 - PARTE 3
-             AUTENTICACION Y AUTORIZACION
-             ====================================== -->
-
+        <!-- AUTENTICACION Y AUTORIZACION -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
-        <!-- ======================================
-             DEPENDENCIAS PARA PRUEBAS
-             ====================================== -->
+        <!-- PERSISTENCIA DE USUARIOS CON JDBC -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
 
+        <!-- BASE DE DATOS H2 -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- PRUEBAS KAFKA -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-kafka-test</artifactId>
             <scope>test</scope>
         </dependency>
 
+        <!-- PRUEBAS WEB -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc-test</artifactId>
@@ -88,10 +80,6 @@
         </dependency>
 
     </dependencies>
-
-    <!-- ==========================================
-         5. MAVEN
-         ========================================== -->
 
     <build>
         <plugins>
@@ -103,4 +91,3 @@
     </build>
 
 </project>
-

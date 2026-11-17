@@ -1,16 +1,21 @@
-# Compiled class file
+
+# ==========================================
+# MINIPEDIDOS V2 - GITIGNORE
+# ==========================================
+
+# Archivos Java compilados
 *.class
 
-# Log file
+# Archivos de registro
 *.log
 
-# BlueJ files
+# Archivos BlueJ
 *.ctxt
 
-# Mobile Tools for Java (J2ME)
+# Herramientas Java ME
 .mtj.tmp/
 
-# Package Files #
+# Paquetes y archivos comprimidos
 *.jar
 *.war
 *.nar
@@ -19,12 +24,43 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# Archivos de errores de la JVM
 hs_err_pid*
 replay_pid*
 
-# Maven - archivos generados
+# ==========================================
+# MAVEN
+# ==========================================
+
 /target/
 
-# Maven - archivos generados
-/target/
+# ==========================================
+# SESION 3 - PARTE 3
+# BASE DE DATOS H2
+# ==========================================
+
+# Datos persistentes de usuarios
+/data/
+
+# Archivos generados por H2
+*.mv.db
+*.trace.db
+
+# ==========================================
+# SEGURIDAD
+# ==========================================
+
+# Variables de entorno privadas
+.env
+.env.*
+!.env.example
+
+# Archivos locales de credenciales
+*.secrets
+*.credentials
+
+# ==========================================
+# RESPALDOS LOCALES
+# ==========================================
+
+/docker-compose.backup.yml
