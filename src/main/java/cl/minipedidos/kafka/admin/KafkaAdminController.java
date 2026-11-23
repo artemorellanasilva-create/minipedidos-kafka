@@ -4,7 +4,8 @@ package cl.minipedidos.kafka.admin;
 // ==========================================
 // MINIPEDIDOS V2 - SESION 3 - PARTE 3
 // ADMINISTRACION DE TOPICOS KAFKA
-// AUTORIZACION MEDIANTE SPRING SECURITY
+// SPRING SECURITY Y CSRF
+// PASO 5.18 - MODIFICACION DE RETENCION
 // ==========================================
 
 // Apache Kafka
@@ -27,9 +28,9 @@ public class KafkaAdminController {
 
     private final KafkaAdminService servicio;
 
-    // =========================================
+    // ==========================================
     // 1. CONFIGURACION DEL CONTROLADOR
-    // =========================================
+    // ==========================================
 
     public KafkaAdminController(
             KafkaAdminService servicio) {
@@ -37,9 +38,9 @@ public class KafkaAdminController {
         this.servicio = servicio;
     }
 
-    // =========================================
+    // ==========================================
     // 2. LISTAR TOPICOS
-    // =========================================
+    // ==========================================
 
     @GetMapping("/topicos")
     public ResponseEntity<?> listarTopicos() {
@@ -57,9 +58,9 @@ public class KafkaAdminController {
         }
     }
 
-    // =========================================
+    // ==========================================
     // 3. CONSULTAR PARTICIONES Y REPLICAS
-    // =========================================
+    // ==========================================
 
     @GetMapping("/topicos/{nombre}")
     public ResponseEntity<?> consultarTopico(
@@ -77,9 +78,9 @@ public class KafkaAdminController {
         }
     }
 
-    // =========================================
+    // ==========================================
     // 4. CONSULTAR CONFIGURACIONES
-    // =========================================
+    // ==========================================
 
     @GetMapping("/topicos/{nombre}/configuracion")
     public ResponseEntity<?> consultarConfiguracion(
@@ -98,9 +99,9 @@ public class KafkaAdminController {
         }
     }
 
-    // =========================================
+    // ==========================================
     // 5. DATOS PARA CREAR UN TOPICO
-    // =========================================
+    // ==========================================
 
     public record CrearTopicoSolicitud(
             String nombre,
@@ -108,28 +109,27 @@ public class KafkaAdminController {
             Integer replicas
     ) {}
 
-    // =========================================
+    // ==========================================
     // 6. CREAR UN NUEVO TOPICO
-    // =========================================
+    // ==========================================
 
     /*
-     * La autorizacion se realiza mediante
-     * Spring Security.
-     *
      * POST /api/admin/kafka/topicos
-     * Requiere ROLE_ADMIN.
      *
-     * Spring Security tambien verifica CSRF.
+     * Spring Security:
+     * - Requiere ROLE_ADMIN.
+     * - Verifica token CSRF.
+     *
+     * No utiliza X-Admin-Token.
      */
 
     @PostMapping("/topicos")
     public ResponseEntity<?> crearTopico(
-            @RequestBody
-            CrearTopicoSolicitud solicitud) {
+            @RequestBody CrearTopicoSolicitud solicitud) {
 
-        // =====================================
+        // --------------------------------------
         // 6.1. VALIDAR DATOS RECIBIDOS
-        // =====================================
+        // --------------------------------------
 
         if (solicitud == null
                 || solicitud.nombre() == null
@@ -144,9 +144,9 @@ public class KafkaAdminController {
             );
         }
 
-        // =====================================
-        // 6.2. VALIDAR CANTIDAD DE PARTICIONES
-        // =====================================
+        // --------------------------------------
+        // 6.2. VALIDAR PARTICIONES
+        // --------------------------------------
 
         if (solicitud.particiones() < 1
                 || solicitud.particiones() > 20) {
@@ -159,9 +159,9 @@ public class KafkaAdminController {
             );
         }
 
-        // =====================================
-        // 6.3. VALIDAR FACTOR DE REPLICACION
-        // =====================================
+        // --------------------------------------
+        // 6.3. VALIDAR REPLICAS
+        // --------------------------------------
 
         if (solicitud.replicas() != 1) {
 
@@ -173,9 +173,9 @@ public class KafkaAdminController {
             );
         }
 
-        // =====================================
-        // 6.4. CREAR TOPICO EN APACHE KAFKA
-        // =====================================
+        // --------------------------------------
+        // 6.4. CREAR TOPICO EN KAFKA
+        // --------------------------------------
 
         try {
 
@@ -205,9 +205,103 @@ public class KafkaAdminController {
         }
     }
 
-    // =========================================
-    // 7. MANEJO DE ERRORES DE KAFKA
-    // =========================================
+    // ==========================================
+    // 7. DATOS PARA MODIFICAR RETENCION
+    // ==========================================
+
+    /*
+     * El dashboard enviara un JSON como:
+     *
+     * {
+     *     "dias": 3
+     * }
+     */
+
+    public record ModificarRetencionSolicitud(
+            Integer dias
+    ) {}
+
+    // ==========================================
+    // 8. MODIFICAR RETENCION DE UN TOPICO
+    // ==========================================
+
+    /*
+     * PUT /api/admin/kafka/topicos/{nombre}/retencion
+     *
+     * Spring Security:
+     * - Requiere ROLE_ADMIN.
+     * - Verifica token CSRF.
+     *
+     * El servicio Kafka modificara retention.ms.
+     */
+
+    @PutMapping("/topicos/{nombre}/retencion")
+    public ResponseEntity<?> modificarRetencion(
+            @PathVariable String nombre,
+            @RequestBody ModificarRetencionSolicitud solicitud) {
+
+        // --------------------------------------
+        // 8.1. VALIDAR SOLICITUD
+        // --------------------------------------
+
+        if (solicitud == null
+                || solicitud.dias() == null) {
+
+            return ResponseEntity.badRequest().body(
+                    Map.of(
+                            "error",
+                            "Debe indicar los dias de retencion."
+                    )
+            );
+        }
+
+        // --------------------------------------
+        // 8.2. VALIDAR RANGO PERMITIDO
+        // --------------------------------------
+
+        if (solicitud.dias() < 1
+                || solicitud.dias() > 30) {
+
+            return ResponseEntity.badRequest().body(
+                    Map.of(
+                            "error",
+                            "La retencion debe estar entre 1 y 30 dias."
+                    )
+            );
+        }
+
+        // --------------------------------------
+        // 8.3. MODIFICAR CONFIGURACION KAFKA
+        // --------------------------------------
+
+        try {
+
+            Map<String, Object> resultado =
+                    servicio.modificarRetencion(
+                            nombre,
+                            solicitud.dias()
+                    );
+
+            return ResponseEntity.ok(resultado);
+
+        } catch (IllegalArgumentException e) {
+
+            return ResponseEntity.badRequest().body(
+                    Map.of(
+                            "error",
+                            e.getMessage()
+                    )
+            );
+
+        } catch (Exception e) {
+
+            return manejarError(e);
+        }
+    }
+
+    // ==========================================
+    // 9. MANEJO DE ERRORES DE KAFKA
+    // ==========================================
 
     private ResponseEntity<?> manejarError(Exception e) {
 
@@ -219,7 +313,10 @@ public class KafkaAdminController {
             causa = causa.getCause();
         }
 
-        // Topico inexistente
+        // --------------------------------------
+        // 9.1. TOPICO INEXISTENTE
+        // --------------------------------------
+
         if (causa instanceof UnknownTopicOrPartitionException) {
 
             return ResponseEntity.status(
@@ -230,7 +327,10 @@ public class KafkaAdminController {
             ));
         }
 
-        // Topico duplicado
+        // --------------------------------------
+        // 9.2. TOPICO DUPLICADO
+        // --------------------------------------
+
         if (causa instanceof TopicExistsException) {
 
             return ResponseEntity.status(
@@ -244,9 +344,9 @@ public class KafkaAdminController {
         return errorServicio();
     }
 
-    // =========================================
-    // 8. ERROR DE SERVICIO
-    // =========================================
+    // ==========================================
+    // 10. ERROR GENERAL DEL SERVICIO KAFKA
+    // ==========================================
 
     private ResponseEntity<?> errorServicio() {
 

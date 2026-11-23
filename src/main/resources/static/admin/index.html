@@ -20,20 +20,102 @@
 <!-- ==========================================
      MINIPEDIDOS V2 - SESION 3 - PARTE 3
      DASHBOARD CON SPRING SECURITY
+     PASO 5.17 - USUARIO Y CIERRE DE SESION
+     ========================================== -->
+
+<!-- ==========================================
+     1. ENCABEZADO
      ========================================== -->
 
 <header class="encabezado">
 
-    <h1>MiniPedidos V2</h1>
+    <div class="encabezado-contenido">
 
-    <p>Panel de Administración de Apache Kafka</p>
+        <!-- TITULO DEL SISTEMA -->
+
+        <div class="identidad-sistema">
+
+            <h1>MiniPedidos V2</h1>
+
+            <p>
+                Panel de Administración de Apache Kafka
+            </p>
+
+        </div>
+
+        <!-- ==================================
+             USUARIO AUTENTICADO
+             ================================== -->
+
+        <div
+            id="panel-usuario"
+            class="panel-usuario"
+            aria-label="Información de la sesión"
+        >
+
+            <div class="informacion-usuario">
+
+                <span class="etiqueta-usuario">
+                    Usuario conectado
+                </span>
+
+                <strong id="nombre-usuario">
+                    Cargando...
+                </strong>
+
+                <span id="rol-usuario">
+                    Verificando permisos...
+                </span>
+
+            </div>
+
+            <!-- ==================================
+                 CIERRE DE SESION
+                 ==================================
+
+                 Spring Security procesa POST /logout.
+
+                 El token CSRF sera incorporado
+                 mediante JavaScript en el
+                 siguiente paso.
+
+                 No se utiliza GET para cerrar
+                 una sesion.
+                 ================================== -->
+
+            <form
+                id="form-cerrar-sesion"
+                action="/logout"
+                method="post"
+            >
+
+                <input
+                    type="hidden"
+                    id="csrf-logout"
+                    name="_csrf"
+                    value=""
+                >
+
+                <button
+                    type="submit"
+                    id="btn-cerrar-sesion"
+                    disabled
+                >
+                    Cerrar sesión
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
 
 </header>
 
 <main class="contenedor">
 
     <!-- ======================================
-         1. PANEL DE ADMINISTRACION
+         2. PANEL DE ADMINISTRACION KAFKA
          ====================================== -->
 
     <section class="tarjeta">
@@ -160,14 +242,14 @@
                  SEGURIDAD
                  ==================================
 
-                 Ya no se solicita el token manual.
+                 La autorización de operaciones
+                 se realiza mediante Spring Security.
 
-                 Spring Security controla los
-                 permisos mediante la sesion
-                 autenticada del usuario.
+                 Las operaciones POST utilizan
+                 el token CSRF de la sesión.
 
-                 El token CSRF se obtendra desde
-                 el backend mediante JavaScript.
+                 No se solicita el antiguo
+                 token administrativo manual.
                  ================================== -->
 
             <!-- BOTON DE EJECUCION -->
@@ -185,7 +267,7 @@
     </section>
 
     <!-- ======================================
-         2. RESULTADOS DE LAS OPERACIONES
+         3. RESULTADOS DE LAS OPERACIONES
          ====================================== -->
 
     <section class="tarjeta">
@@ -205,11 +287,13 @@
             <table id="tabla-resultados">
 
                 <thead>
+
                     <tr>
                         <th>Tópico</th>
                         <th>Particiones</th>
                         <th>Réplicas</th>
                     </tr>
+
                 </thead>
 
                 <tbody id="cuerpo-resultados">
@@ -228,7 +312,7 @@
 </main>
 
 <!-- ==========================================
-     3. PIE DE PAGINA
+     4. PIE DE PAGINA
      ========================================== -->
 
 <footer>

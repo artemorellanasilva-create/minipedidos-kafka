@@ -3,6 +3,7 @@
    MiniPedidos V2 - Sesion 3 - Parte 3
    Dashboard de administracion de Kafka
    Autenticacion y administracion de usuarios
+   Paso 5.17 - Usuario y cierre de sesion
    ========================================= */
 
 /* =========================================
@@ -56,6 +57,96 @@ body {
 .encabezado p {
     margin: 5px 0 0;
     color: #52657d;
+}
+
+/* =========================================
+   3.1. DISTRIBUCION DEL ENCABEZADO
+   ========================================= */
+
+.encabezado-contenido {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.identidad-sistema {
+    flex: 1;
+    min-width: 0;
+}
+
+/* =========================================
+   3.2. PANEL DEL USUARIO AUTENTICADO
+   ========================================= */
+
+.panel-usuario {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.informacion-usuario {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    text-align: right;
+}
+
+.etiqueta-usuario {
+    color: var(--gris);
+    font-size: 12px;
+}
+
+#nombre-usuario {
+    color: var(--azul);
+    font-size: 16px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+#rol-usuario {
+    color: var(--gris);
+    font-size: 13px;
+}
+
+/* =========================================
+   3.3. FORMULARIO DE CIERRE DE SESION
+   ========================================= */
+
+#form-cerrar-sesion {
+    margin: 0;
+}
+
+#csrf-logout {
+    display: none;
+}
+
+#btn-cerrar-sesion {
+    margin-top: 0;
+    padding: 10px 16px;
+    background-color: var(--blanco);
+    color: var(--azul);
+    border: 1px solid var(--azul);
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+#btn-cerrar-sesion:not(:disabled):hover {
+    background-color: var(--azul-claro);
+}
+
+#btn-cerrar-sesion:disabled {
+    background-color: #eef2f6;
+    color: #8a98a8;
+    border-color: var(--borde);
+    cursor: not-allowed;
 }
 
 /* =========================================
@@ -120,6 +211,11 @@ input:focus,
 select:focus {
     outline: 2px solid #9ac4ec;
     outline-offset: 1px;
+}
+
+button:focus-visible {
+    outline: 2px solid #9ac4ec;
+    outline-offset: 2px;
 }
 
 input:disabled,
@@ -436,6 +532,21 @@ footer {
         padding: 20px;
     }
 
+    .encabezado-contenido {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+    }
+
+    .panel-usuario {
+        justify-content: space-between;
+    }
+
+    .informacion-usuario {
+        align-items: flex-start;
+        text-align: left;
+    }
+
     .tarjeta {
         padding: 20px;
     }
@@ -462,6 +573,21 @@ footer {
     }
 
     .grupo-botones button {
+        width: 100%;
+    }
+
+    .panel-usuario {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .informacion-usuario {
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    #btn-cerrar-sesion {
         width: 100%;
     }
 }

@@ -1,13 +1,20 @@
 
 package cl.minipedidos.kafka.admin;
 
-// Apache Kafka - Administracion
+// ==========================================
+// MINIPEDIDOS V2 - SESION 3 - PARTE 3
+// ADMINISTRACION DE APACHE KAFKA
+// PASO 5.18 - MODIFICACION DE RETENCION
+// ==========================================
+
+// Apache Kafka
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.TopicDescription;
 
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartitionInfo;
@@ -32,11 +39,12 @@ public class KafkaAdminService {
 
     private final Properties propiedades = new Properties();
 
+    // Retencion inicial: 7 dias
     private static final String RETENCION_INICIAL = "604800000";
 
-    // =========================================
+    // ==========================================
     // 1. CONFIGURACION DEL CLIENTE KAFKA
-    // =========================================
+    // ==========================================
 
     public KafkaAdminService(
             @Value("${spring.kafka.bootstrap-servers}")
@@ -53,13 +61,14 @@ public class KafkaAdminService {
         );
     }
 
-    // =========================================
-    // 2. LISTAR TOPICOS EXISTENTES
-    // =========================================
+    // ==========================================
+    // 2. LISTAR TOPICOS
+    // ==========================================
 
     public List<String> listarTopicos() throws Exception {
 
-        try (AdminClient admin = AdminClient.create(propiedades)) {
+        try (AdminClient admin =
+                     AdminClient.create(propiedades)) {
 
             List<String> topicos = new ArrayList<>(
                     admin.listTopics()
@@ -73,14 +82,15 @@ public class KafkaAdminService {
         }
     }
 
-    // =========================================
-    // 3. CONSULTAR PARTICIONES, LIDERES Y REPLICAS
-    // =========================================
+    // ==========================================
+    // 3. CONSULTAR PARTICIONES Y REPLICAS
+    // ==========================================
 
     public Map<String, Object> consultarTopico(
             String nombre) throws Exception {
 
-        try (AdminClient admin = AdminClient.create(propiedades)) {
+        try (AdminClient admin =
+                     AdminClient.create(propiedades)) {
 
             TopicDescription descripcion =
                     admin.describeTopics(List.of(nombre))
@@ -94,7 +104,8 @@ public class KafkaAdminService {
             for (TopicPartitionInfo particion :
                     descripcion.partitions()) {
 
-                Map<String, Object> datos = new HashMap<>();
+                Map<String, Object> datos =
+                        new HashMap<>();
 
                 Node lider = particion.leader();
 
@@ -133,7 +144,8 @@ public class KafkaAdminService {
                     )
             );
 
-            Map<String, Object> resultado = new HashMap<>();
+            Map<String, Object> resultado =
+                    new HashMap<>();
 
             resultado.put("nombre", nombre);
 
@@ -148,27 +160,35 @@ public class KafkaAdminService {
         }
     }
 
-    // =========================================
-    // 4. CONSULTAR CONFIGURACIONES DE UN TOPICO
-    // =========================================
+    // ==========================================
+    // 4. CONSULTAR CONFIGURACIONES
+    // ==========================================
 
     public Map<String, String> consultarConfiguracion(
             String nombre) throws Exception {
 
-        try (AdminClient admin = AdminClient.create(propiedades)) {
+        try (AdminClient admin =
+                     AdminClient.create(propiedades)) {
 
-            ConfigResource recurso = new ConfigResource(
-                    ConfigResource.Type.TOPIC,
-                    nombre
-            );
+            ConfigResource recurso =
+                    new ConfigResource(
+                            ConfigResource.Type.TOPIC,
+                            nombre
+                    );
 
-            Config configuracion = admin.describeConfigs(
-                    List.of(recurso)
-            ).all().get(10, TimeUnit.SECONDS).get(recurso);
+            Config configuracion =
+                    admin.describeConfigs(
+                            List.of(recurso)
+                    )
+                    .all()
+                    .get(10, TimeUnit.SECONDS)
+                    .get(recurso);
 
-            Map<String, String> resultado = new TreeMap<>();
+            Map<String, String> resultado =
+                    new TreeMap<>();
 
-            for (ConfigEntry entrada : configuracion.entries()) {
+            for (ConfigEntry entrada :
+                    configuracion.entries()) {
 
                 String clave = entrada.name();
 
@@ -189,9 +209,9 @@ public class KafkaAdminService {
         }
     }
 
-    // =========================================
-    // 5. CREAR UN NUEVO TOPICO EN KAFKA
-    // =========================================
+    // ==========================================
+    // 5. CREAR TOPICO
+    // ==========================================
 
     public Map<String, Object> crearTopico(
             String nombre,
@@ -209,7 +229,7 @@ public class KafkaAdminService {
             );
         }
 
-        // Limitar particiones en este laboratorio
+        // Validar particiones
         if (cantidadParticiones < 1
                 || cantidadParticiones > 20) {
 
@@ -218,7 +238,7 @@ public class KafkaAdminService {
             );
         }
 
-        // Actualmente solo tenemos un broker
+        // Laboratorio con un broker
         if (factorReplicacion != 1) {
 
             throw new IllegalArgumentException(
@@ -226,16 +246,15 @@ public class KafkaAdminService {
             );
         }
 
-        try (AdminClient admin = AdminClient.create(propiedades)) {
+        try (AdminClient admin =
+                     AdminClient.create(propiedades)) {
 
-            // Definir el nuevo topico
             NewTopic nuevoTopico = new NewTopic(
                     nombre,
                     cantidadParticiones,
                     factorReplicacion
             );
 
-            // Configuraciones iniciales
             nuevoTopico.configs(
                     Map.of(
                             "retention.ms", RETENCION_INICIAL,
@@ -244,30 +263,130 @@ public class KafkaAdminService {
                     )
             );
 
-            // Solicitar la creacion al broker
             admin.createTopics(
                     List.of(nuevoTopico)
             ).all().get(10, TimeUnit.SECONDS);
 
-            // Preparar respuesta para la API REST
-            Map<String, Object> resultado = new HashMap<>();
+            Map<String, Object> resultado =
+                    new HashMap<>();
 
             resultado.put("nombre", nombre);
+
             resultado.put(
                     "particiones",
                     cantidadParticiones
             );
+
             resultado.put(
                     "replicas",
                     factorReplicacion
             );
+
             resultado.put(
                     "retencionMs",
                     Long.parseLong(RETENCION_INICIAL)
             );
+
             resultado.put(
                     "mensaje",
                     "Topico creado correctamente."
+            );
+
+            return resultado;
+        }
+    }
+
+    // ==========================================
+    // 6. MODIFICAR RETENCION DE UN TOPICO
+    // ==========================================
+
+    public Map<String, Object> modificarRetencion(
+            String nombre,
+            int dias) throws Exception {
+
+        // --------------------------------------
+        // 6.1 VALIDAR NOMBRE
+        // --------------------------------------
+
+        if (nombre == null
+                || !nombre.matches("[a-zA-Z0-9._-]{1,249}")
+                || nombre.equals(".")
+                || nombre.equals("..")) {
+
+            throw new IllegalArgumentException(
+                    "El nombre del topico no es valido."
+            );
+        }
+
+        // --------------------------------------
+        // 6.2 VALIDAR DIAS
+        // --------------------------------------
+
+        // Limite del laboratorio: 1 a 30 dias
+        if (dias < 1 || dias > 30) {
+
+            throw new IllegalArgumentException(
+                    "La retencion debe estar entre 1 y 30 dias."
+            );
+        }
+
+        // --------------------------------------
+        // 6.3 CONVERTIR DIAS A MILISEGUNDOS
+        // --------------------------------------
+
+        long retencionMs =
+                TimeUnit.DAYS.toMillis(dias);
+
+        // --------------------------------------
+        // 6.4 PREPARAR CAMBIO EN KAFKA
+        // --------------------------------------
+
+        ConfigResource recurso =
+                new ConfigResource(
+                        ConfigResource.Type.TOPIC,
+                        nombre
+                );
+
+        ConfigEntry entrada =
+                new ConfigEntry(
+                        "retention.ms",
+                        Long.toString(retencionMs)
+                );
+
+        AlterConfigOp operacion =
+                new AlterConfigOp(
+                        entrada,
+                        AlterConfigOp.OpType.SET
+                );
+
+        // --------------------------------------
+        // 6.5 EJECUTAR MODIFICACION
+        // --------------------------------------
+
+        try (AdminClient admin =
+                     AdminClient.create(propiedades)) {
+
+            admin.incrementalAlterConfigs(
+                    Map.of(
+                            recurso,
+                            List.of(operacion)
+                    )
+            ).all().get(10, TimeUnit.SECONDS);
+
+            // ----------------------------------
+            // 6.6 PREPARAR RESULTADO
+            // ----------------------------------
+
+            Map<String, Object> resultado =
+                    new HashMap<>();
+
+            resultado.put("nombre", nombre);
+            resultado.put("dias", dias);
+            resultado.put("retencionMs", retencionMs);
+
+            resultado.put(
+                    "mensaje",
+                    "Retencion modificada correctamente."
             );
 
             return resultado;

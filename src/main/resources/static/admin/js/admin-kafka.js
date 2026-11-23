@@ -2,18 +2,17 @@
 /*
  * ==========================================
  * MINIPEDIDOS V2 - SESION 3 - PARTE 3
- * DASHBOARD DE ADMINISTRACION KAFKA
- * INTEGRACION CON SPRING SECURITY Y CSRF
+ * PASOS 5.17 Y 5.18
+ * ADMINISTRACION KAFKA Y SEGURIDAD
  * ==========================================
  *
- * Operaciones:
  * 1. Listar topicos
  * 2. Consultar particiones y replicas
  * 3. Consultar configuraciones
  * 4. Crear topicos
- *
- * Pendiente:
  * 5. Modificar retencion
+ * 6. Mostrar usuario autenticado
+ * 7. Cerrar sesion
  */
 
 "use strict";
@@ -21,7 +20,7 @@
 document.addEventListener("DOMContentLoaded", () => {
 
     // ==========================================
-    // 1. ELEMENTOS DEL FORMULARIO
+    // 1. ELEMENTOS DEL DASHBOARD
     // ==========================================
 
     const formulario =
@@ -67,29 +66,44 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("detalle-resultados");
 
     // ==========================================
-    // 2. DIRECCIONES DE LA API
+    // 2. ELEMENTOS DE SEGURIDAD
+    // ==========================================
+
+    const nombreUsuario =
+        document.getElementById("nombre-usuario");
+
+    const rolUsuario =
+        document.getElementById("rol-usuario");
+
+    const formularioLogout =
+        document.getElementById("form-cerrar-sesion");
+
+    const botonLogout =
+        document.getElementById("btn-cerrar-sesion");
+
+    const csrfLogout =
+        document.getElementById("csrf-logout");
+
+    // ==========================================
+    // 3. ENDPOINTS
     // ==========================================
 
     const API = "/api/admin/kafka";
 
-    /*
-     * Este endpoint se implementara en el
-     * siguiente paso, en Spring Boot.
-     *
-     * Entregara el token CSRF correspondiente
-     * a la sesion autenticada.
-     */
     const API_CSRF = "/admin/csrf";
+
+    const API_USUARIO = "/admin/usuario";
 
     const operacionesDisponibles = [
         "listar",
         "consultar",
         "configuracion",
-        "crear"
+        "crear",
+        "retencion"
     ];
 
     // ==========================================
-    // 3. ACTUALIZAR EL FORMULARIO
+    // 4. ACTUALIZAR FORMULARIO
     // ==========================================
 
     function actualizarFormulario() {
@@ -99,11 +113,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const esCreacion = seleccion === "crear";
         const esRetencion = seleccion === "retencion";
 
-        grupoTopico.hidden = seleccion === "listar";
+        grupoTopico.hidden =
+            seleccion === "listar";
 
         grupoParticiones.hidden = !esCreacion;
         grupoReplicas.hidden = !esCreacion;
-
         grupoRetencion.hidden = !esRetencion;
 
         nombreTopico.required =
@@ -111,41 +125,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
         particiones.required = esCreacion;
         replicas.required = esCreacion;
-
         retencion.required = esRetencion;
 
         boton.disabled =
             !operacionesDisponibles.includes(seleccion);
 
         cuerpoTabla.replaceChildren();
-
         detalle.textContent = "";
 
         estado.className = "";
 
         estado.textContent = boton.disabled
-            ? "Esta operación todavía no está disponible."
+            ? "Esta operación no está disponible."
             : "Operación lista para ejecutar.";
     }
 
     // ==========================================
-    // 4. AGREGAR RESULTADOS A LA TABLA
+    // 5. AGREGAR FILAS A LA TABLA
     // ==========================================
 
-    function agregarFila(
-            nombre,
-            cantidad,
-            replicasTexto) {
+    function agregarFila(nombre, cantidad, replicasTexto) {
 
         const fila = document.createElement("tr");
 
-        const valores = [
+        for (const valor of [
             nombre,
             cantidad,
             replicasTexto
-        ];
-
-        for (const valor of valores) {
+        ]) {
 
             const celda = document.createElement("td");
 
@@ -158,59 +165,47 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // 5. PROCESAR RESPUESTAS HTTP
+    // 6. PROCESAR RESPUESTAS HTTP
     // ==========================================
 
     async function procesarRespuesta(respuesta) {
 
-        const tipoContenido =
+        const tipo =
             respuesta.headers.get("content-type") || "";
 
         let datos = null;
 
-        if (tipoContenido.includes("application/json")) {
+        if (tipo.includes("application/json")) {
             datos = await respuesta.json();
         }
 
         if (!respuesta.ok) {
 
-            let mensaje =
-                `Error HTTP ${respuesta.status}`;
+            let mensaje = `Error HTTP ${respuesta.status}`;
 
             if (respuesta.status === 401) {
-
-                mensaje =
-                    "La sesión no está autenticada. Inicia sesión nuevamente.";
-
+                mensaje = "La sesión no está autenticada.";
             } else if (respuesta.status === 403) {
-
-                mensaje =
-                    "Acceso denegado. Verifica tus permisos o la sesión CSRF.";
-
+                mensaje = "Acceso denegado. Verifica el rol y CSRF.";
             } else if (respuesta.status === 404) {
-
                 mensaje = "El recurso solicitado no existe.";
-
             } else if (respuesta.status === 409) {
-
                 mensaje = "El tópico ya existe.";
-
             } else if (respuesta.status === 503) {
-
-                mensaje = "El servicio Kafka no está disponible.";
+                mensaje = "Kafka no está disponible.";
             }
 
-            if (datos && datos.error) {
+            if (datos && typeof datos.error === "string") {
                 mensaje = datos.error;
             }
 
             throw new Error(mensaje);
         }
 
-        if (!tipoContenido.includes("application/json")) {
+        if (!tipo.includes("application/json")) {
 
             throw new Error(
-                "El servidor no devolvió JSON. Verifica que tu sesión siga activa."
+                "El servidor no devolvió JSON. Comprueba la sesión."
             );
         }
 
@@ -218,7 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // 6. CONSULTAS GET
+    // 7. CONSULTAS GET
     // ==========================================
 
     async function consultarAPI(ruta) {
@@ -226,7 +221,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const respuesta = await fetch(ruta, {
 
             method: "GET",
-
             credentials: "same-origin",
 
             headers: {
@@ -236,11 +230,11 @@ document.addEventListener("DOMContentLoaded", () => {
             cache: "no-store"
         });
 
-        return await procesarRespuesta(respuesta);
+        return procesarRespuesta(respuesta);
     }
 
     // ==========================================
-    // 7. OBTENER TOKEN CSRF
+    // 8. OBTENER CSRF
     // ==========================================
 
     async function obtenerCSRF() {
@@ -252,22 +246,85 @@ document.addEventListener("DOMContentLoaded", () => {
             typeof datos.token !== "string" ||
             !datos.token ||
             typeof datos.headerName !== "string" ||
-            !datos.headerName
+            !datos.headerName ||
+            typeof datos.parameterName !== "string" ||
+            !datos.parameterName
         ) {
 
             throw new Error(
-                "No fue posible obtener la protección CSRF de la sesión."
+                "No fue posible obtener el token CSRF."
             );
         }
 
-        return {
-            token: datos.token,
-            headerName: datos.headerName
-        };
+        return datos;
     }
 
     // ==========================================
-    // 8. VALIDAR NOMBRE DEL TOPICO
+    // 9. CONSULTAR USUARIO CONECTADO
+    // ==========================================
+
+    async function inicializarSesion() {
+
+        if (
+            !nombreUsuario ||
+            !rolUsuario ||
+            !formularioLogout ||
+            !botonLogout ||
+            !csrfLogout
+        ) {
+            console.error(
+                "Faltan elementos de sesión en index.html."
+            );
+            return;
+        }
+
+        nombreUsuario.textContent = "Cargando...";
+        rolUsuario.textContent = "Verificando permisos...";
+        botonLogout.disabled = true;
+
+        try {
+
+            const usuario = await consultarAPI(API_USUARIO);
+
+            const csrf = await obtenerCSRF();
+
+            if (
+                typeof usuario.usuario !== "string" ||
+                !Array.isArray(usuario.roles)
+            ) {
+                throw new Error(
+                    "Respuesta de usuario no válida."
+                );
+            }
+
+            nombreUsuario.textContent = usuario.usuario;
+
+            rolUsuario.textContent =
+                "Rol: " + usuario.roles.join(", ");
+
+            csrfLogout.name = csrf.parameterName;
+            csrfLogout.value = csrf.token;
+
+            botonLogout.disabled = false;
+
+        } catch (error) {
+
+            nombreUsuario.textContent =
+                "Sesión no verificada";
+
+            rolUsuario.textContent = error.message;
+
+            botonLogout.disabled = true;
+
+            console.error(
+                "Error al inicializar sesión:",
+                error.message
+            );
+        }
+    }
+
+    // ==========================================
+    // 10. VALIDAR NOMBRE DEL TOPICO
     // ==========================================
 
     function obtenerNombreTopico() {
@@ -289,76 +346,102 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // 9. CREAR TOPICO CON SPRING SECURITY
+    // 11. OPERACIONES PROTEGIDAS
+    // ==========================================
+
+    async function enviarOperacion(ruta, metodo, datos) {
+
+        const csrf = await obtenerCSRF();
+
+        const respuesta = await fetch(ruta, {
+
+            method: metodo,
+            credentials: "same-origin",
+
+            headers: {
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                [csrf.headerName]: csrf.token
+            },
+
+            body: JSON.stringify(datos),
+            cache: "no-store"
+        });
+
+        return procesarRespuesta(respuesta);
+    }
+
+    // ==========================================
+    // 12. CREAR TOPICO
     // ==========================================
 
     async function crearTopico() {
 
         const nombre = obtenerNombreTopico();
 
-        const cantidadParticiones =
-            Number(particiones.value);
+        const cantidad = Number(particiones.value);
 
-        const factorReplicacion =
-            Number(replicas.value);
-
-        // Validar particiones
+        const factor = Number(replicas.value);
 
         if (
-            !Number.isInteger(cantidadParticiones) ||
-            cantidadParticiones < 1 ||
-            cantidadParticiones > 20
+            !Number.isInteger(cantidad) ||
+            cantidad < 1 ||
+            cantidad > 20
         ) {
-
             throw new Error(
                 "Las particiones deben estar entre 1 y 20."
             );
         }
 
-        // Validar replicas
-
-        if (factorReplicacion !== 1) {
-
+        if (factor !== 1) {
             throw new Error(
-                "Este laboratorio utiliza replicación 1."
+                "El laboratorio utiliza replicación 1."
             );
         }
 
-        // Obtener CSRF de la sesion autenticada
-
-        const csrf = await obtenerCSRF();
-
-        // Enviar solicitud POST a Spring Boot
-
-        const respuesta = await fetch(
+        return enviarOperacion(
             `${API}/topicos`,
+            "POST",
             {
-
-                method: "POST",
-
-                credentials: "same-origin",
-
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json",
-                    [csrf.headerName]: csrf.token
-                },
-
-                body: JSON.stringify({
-                    nombre: nombre,
-                    particiones: cantidadParticiones,
-                    replicas: factorReplicacion
-                }),
-
-                cache: "no-store"
+                nombre: nombre,
+                particiones: cantidad,
+                replicas: factor
             }
         );
-
-        return await procesarRespuesta(respuesta);
     }
 
     // ==========================================
-    // 10. EJECUTAR OPERACIONES
+    // 13. MODIFICAR RETENCION
+    // ==========================================
+
+    async function modificarRetencion() {
+
+        const nombre = obtenerNombreTopico();
+
+        const dias = Number(retencion.value);
+
+        if (
+            !Number.isInteger(dias) ||
+            dias < 1 ||
+            dias > 30
+        ) {
+
+            throw new Error(
+                "La retención debe estar entre 1 y 30 días."
+            );
+        }
+
+        return enviarOperacion(
+            `${API}/topicos/${encodeURIComponent(nombre)}/retencion`,
+            "PUT",
+            {
+                dias: dias
+            }
+        );
+    }
+
+    // ==========================================
+    // 14. EJECUTAR OPERACIONES
     // ==========================================
 
     async function ejecutarOperacion(evento) {
@@ -381,18 +464,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         estado.textContent =
             seleccion === "crear"
-                ? "Creando tópico en Kafka..."
-                : "Consultando Kafka...";
+                ? "Creando tópico..."
+                : seleccion === "retencion"
+                    ? "Modificando retención..."
+                    : "Consultando Kafka...";
 
         cuerpoTabla.replaceChildren();
-
         detalle.textContent = "";
 
         try {
 
-            // ----------------------------------
-            // OPERACION 1: LISTAR TOPICOS
-            // ----------------------------------
+            // 1. LISTAR TOPICOS
 
             if (seleccion === "listar") {
 
@@ -401,20 +483,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
                 for (const nombre of nombres) {
-
-                    agregarFila(
-                        nombre,
-                        "—",
-                        "—"
-                    );
+                    agregarFila(nombre, "—", "—");
                 }
 
                 estado.textContent =
                     `Consulta exitosa: ${nombres.length} tópicos encontrados.`;
 
-            // ----------------------------------
-            // OPERACION 2: CONSULTAR PARTICIONES
-            // ----------------------------------
+            // 2. CONSULTAR PARTICIONES
 
             } else if (seleccion === "consultar") {
 
@@ -439,9 +514,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 estado.textContent =
                     `Consulta exitosa: ${datos.cantidadParticiones} particiones.`;
 
-            // ----------------------------------
-            // OPERACION 3: CONSULTAR CONFIGURACION
-            // ----------------------------------
+            // 3. CONSULTAR CONFIGURACIONES
 
             } else if (seleccion === "configuracion") {
 
@@ -464,11 +537,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     JSON.stringify(datos, null, 2);
 
                 estado.textContent =
-                    `Configuración consultada correctamente: ${nombre}`;
+                    `Configuración consultada: ${nombre}`;
 
-            // ----------------------------------
-            // OPERACION 4: CREAR TOPICO
-            // ----------------------------------
+            // 4. CREAR TOPICO
 
             } else if (seleccion === "crear") {
 
@@ -485,6 +556,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 estado.textContent =
                     `Tópico ${datos.nombre} creado correctamente.`;
+
+            // 5. MODIFICAR RETENCION
+
+            } else if (seleccion === "retencion") {
+
+                const datos = await modificarRetencion();
+
+                agregarFila(
+                    datos.nombre,
+                    `${datos.dias} día(s)`,
+                    `${datos.retencionMs} ms`
+                );
+
+                detalle.textContent =
+                    JSON.stringify(datos, null, 2);
+
+                estado.textContent =
+                    `Retención actualizada a ${datos.dias} día(s) para ${datos.nombre}.`;
             }
 
             estado.className = "mensaje-exito";
@@ -492,7 +581,6 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (error) {
 
             estado.textContent = error.message;
-
             estado.className = "mensaje-error";
 
         } finally {
@@ -505,7 +593,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ==========================================
-    // 11. EVENTOS
+    // 15. CIERRE DE SESION
+    // ==========================================
+
+    if (formularioLogout) {
+
+        formularioLogout.addEventListener(
+            "submit",
+            (evento) => {
+
+                if (!csrfLogout.value) {
+
+                    evento.preventDefault();
+
+                    console.error(
+                        "No hay CSRF disponible para cerrar sesión."
+                    );
+
+                    return;
+                }
+
+                botonLogout.disabled = true;
+            }
+        );
+    }
+
+    // ==========================================
+    // 16. EVENTOS E INICIALIZACION
     // ==========================================
 
     operacion.addEventListener(
@@ -518,12 +632,12 @@ document.addEventListener("DOMContentLoaded", () => {
         ejecutarOperacion
     );
 
-    // Inicializar formulario
-
     actualizarFormulario();
 
+    inicializarSesion();
+
     console.log(
-        "MiniPedidos V2: dashboard conectado a Spring Security."
+        "MiniPedidos V2: dashboard inicializado."
     );
 
 });
