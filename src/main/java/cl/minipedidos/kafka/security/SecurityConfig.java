@@ -5,6 +5,7 @@ package cl.minipedidos.kafka.security;
 // MINIPEDIDOS V2 - SESION 3 - PARTE 3
 // SPRING SECURITY + H2
 // AUTENTICACION Y REDIRECCION AL DASHBOARD
+// ACTUALIZACION SESION 6 - CIERRE DE SESION
 // ==========================================
 
 import javax.sql.DataSource;
@@ -180,11 +181,17 @@ public class SecurityConfig {
 
         // ==========================================
         // 5. CIERRE DE SESION
+        // ACTUALIZACION SESION 6
         // ==========================================
 
         http.logout(logout -> logout
 
-                .logoutSuccessUrl("/login?logout")
+                // Redirigir al formulario de login
+                // despues de cerrar la sesion.
+                // Se elimina ?logout para evitar
+                // la respuesta HTTP 404 observada.
+                .logoutSuccessUrl("/login")
+
                 .permitAll()
         );
 
