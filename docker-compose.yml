@@ -3,6 +3,7 @@ services:
 
   # ==========================================
   # APACHE KAFKA 4.1.2 - KRAFT
+  # BROKER 1 - ORIGINAL
   # ==========================================
 
   kafka:
@@ -40,6 +41,94 @@ services:
       - kafka-data:/tmp/kraft-combined-logs
 
   # ==========================================
+  # APACHE KAFKA 4.1.2 - KRAFT
+  # BROKER 2 - ADICIONAL
+  # ==========================================
+
+  kafka2:
+    image: apache/kafka:4.1.2
+    container_name: kafka2
+    hostname: kafka2
+
+    ports:
+      - "9094:9094"
+
+    environment:
+      CLUSTER_ID: "5L6g3nShT-eMCtK--X86sw"
+
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: broker
+
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      KAFKA_LISTENERS: INTERNAL://:29092,EXTERNAL://:9094
+
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka2:29092,EXTERNAL://localhost:9094
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
+
+    volumes:
+      - kafka-data-2:/tmp/kraft-combined-logs
+
+    depends_on:
+      - kafka
+
+  # ==========================================
+  # APACHE KAFKA 4.1.2 - KRAFT
+  # BROKER 3 - NUEVO
+  # ==========================================
+
+  kafka3:
+    image: apache/kafka:4.1.2
+    container_name: kafka3
+    hostname: kafka3
+
+    ports:
+      - "9096:9096"
+
+    environment:
+      # Mismo identificador del cluster existente
+      CLUSTER_ID: "5L6g3nShT-eMCtK--X86sw"
+
+      # Identificador exclusivo del tercer broker
+      KAFKA_NODE_ID: 3
+
+      # Broker sin funcion de controlador
+      KAFKA_PROCESS_ROLES: broker
+
+      # Controlador KRaft existente
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      # Comunicacion interna y externa
+      KAFKA_LISTENERS: INTERNAL://:29092,EXTERNAL://:9096
+
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka3:29092,EXTERNAL://localhost:9096
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      # Almacenamiento persistente
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+
+      # Limites de memoria para Codespaces
+      KAFKA_HEAP_OPTS: "-Xms256m -Xmx512m"
+
+    volumes:
+      - kafka-data-3:/tmp/kraft-combined-logs
+
+    depends_on:
+      - kafka
+
+  # ==========================================
   # KAFKA UI - ADMINISTRACION VISUAL
   # ==========================================
 
@@ -58,8 +147,10 @@ services:
       - kafka
 
 # ==========================================
-# VOLUMEN PERSISTENTE
+# VOLUMENES PERSISTENTES
 # ==========================================
 
 volumes:
   kafka-data:
+  kafka-data-2:
+  kafka-data-3:

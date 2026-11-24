@@ -25,7 +25,7 @@ public class PedidoConsumer {
     @KafkaListener(
             topics = "pedidos-creados",
             groupId = "minipedidos-consumidores",
-            concurrency = "2"
+            concurrency = "3"
     )
     public void recibirPedido(String mensaje) {
 
